@@ -1,26 +1,16 @@
-import cloudinary from "../config/cloudinary.js"
 import { handleError } from "../helpers/handleError.js"
 import Blog from "../models/blog.model.js"
 import { encode } from 'entities'
 import Category from "../models/category.model.js"
+
 export const addBlog = async (req, res, next) => {
     try {
         const data = JSON.parse(req.body.data)
         let featuredImage = ''
         if (req.file) {
-            // Upload an image
-            const uploadResult = await cloudinary.uploader
-                .upload(
-                    req.file.path,
-                    { folder: 'yt-mern-blog', resource_type: 'auto' }
-                )
-                .catch((error) => {
-                    next(handleError(500, error.message))
-                });
-
-            featuredImage = uploadResult.secure_url
+            featuredImage = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
         }
-        
+
         const blog = new Blog({
             author: data.author,
             category: data.category,
@@ -46,7 +36,7 @@ export const editBlog = async (req, res, next) => {
         const { blogid } = req.params
         const blog = await Blog.findById(blogid).populate('category', 'name')
         if (!blog) {
-            next(handleError(404, 'Data not found.'))
+            return next(handleError(404, 'Data not found.'))
         }
         res.status(200).json({
             blog
@@ -70,23 +60,12 @@ export const updateBlog = async (req, res, next) => {
         let featuredImage = blog.featuredImage
 
         if (req.file) {
-            // Upload an image
-            const uploadResult = await cloudinary.uploader
-                .upload(
-                    req.file.path,
-                    { folder: 'yt-mern-blog', resource_type: 'auto' }
-                )
-                .catch((error) => {
-                    next(handleError(500, error.message))
-                });
-
-            featuredImage = uploadResult.secure_url
+            featuredImage = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
         }
 
         blog.featuredImage = featuredImage
 
         await blog.save()
-
 
         res.status(200).json({
             success: true,
@@ -144,7 +123,7 @@ export const getRelatedBlog = async (req, res, next) => {
 
         const categoryData = await Category.findOne({ slug: category })
         if (!categoryData) {
-            return next(404, 'Category data not found.')
+            return next(handleError(404, 'Category data not found.'))
         }
         const categoryId = categoryData._id
         const relatedBlog = await Blog.find({ category: categoryId, slug: { $ne: blog } }).lean().exec()
@@ -162,7 +141,7 @@ export const getBlogByCategory = async (req, res, next) => {
 
         const categoryData = await Category.findOne({ slug: category })
         if (!categoryData) {
-            return next(404, 'Category data not found.')
+            return next(handleError(404, 'Category data not found.'))
         }
         const categoryId = categoryData._id
         const blog = await Blog.find({ category: categoryId }).populate('author', 'name avatar role').populate('category', 'name slug').lean().exec()
@@ -189,7 +168,6 @@ export const search = async (req, res, next) => {
 
 export const getAllBlogs = async (req, res, next) => {
     try {
-        const user = req.user
         const blog = await Blog.find().populate('author', 'name avatar role').populate('category', 'name slug').sort({ createdAt: -1 }).lean().exec()
         res.status(200).json({
             blog

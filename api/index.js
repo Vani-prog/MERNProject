@@ -17,14 +17,25 @@ const app = express()
 
 app.use(cookieParser())
 app.use(express.json())
+// app.use(cors({
+//     origin: process.env.FRONTEND_URL,
+//     credentials: true
+// }))
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true
-}))
-
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // route setup  
 
+app.use('/uploads', express.static('uploads'))
 app.use('/api/auth', AuthRoute)
 app.use('/api/user', UserRoute)
 app.use('/api/category', CategoryRoute)

@@ -21,7 +21,7 @@ app.use(express.json())
 //     origin: process.env.FRONTEND_URL,
 //     credentials: true
 // }))
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174','http://localhost:3000'];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
